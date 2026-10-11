@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>ИС «Космос» — панель администратора</title>
+<style>
+  :root { --blue:#4a8be8; --blue2:#3a78d4; --bg:#f3f5f9; --line:#e3e7ee; --text:#1f2937; --muted:#6b7280; --red:#e5534b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--text); font-size:14px; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:14px 28px; display:flex; align-items:center; gap:28px; }
+  header .logo { font-weight:700; font-size:18px; color:#1e3a8a; }
+  header nav a { margin-right:18px; color:var(--muted); text-decoration:none; padding:6px 2px; cursor:pointer; }
+  header nav a.active { color:var(--blue); border-bottom:2px solid var(--blue); }
+  header .user { margin-left:auto; color:var(--muted); }
+  main { padding:22px 28px; }
+  h1 { font-size:20px; margin:0 0 14px; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; }
+  .row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  input, select { border:1px solid #cfd6e1; border-radius:6px; padding:7px 10px; font-size:14px; background:#fff; min-width:140px; }
+  button { background:var(--blue); color:#fff; border:0; border-radius:6px; padding:8px 14px; font-weight:600; cursor:pointer; font-size:13px; }
+  button.sec { background:#e8eef8; color:#1d4ed8; } button.red { background:var(--red); } button.sm { padding:5px 10px; font-size:12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; background:#eef2f8; padding:9px 10px; font-size:13px; }
+  td { padding:8px 10px; border-bottom:1px solid #edf0f5; }
+  .badge { padding:3px 9px; border-radius:10px; font-size:12px; font-weight:600; }
+  .b-wait { background:#fff4d6; color:#9a6700; } .b-ok { background:#dcfce7; color:#166534; } .b-in { background:#dbeafe; color:#1e40af; }
+  .b-out { background:#f1f5f9; color:#475569; } .b-cancel { background:#fee2e2; color:#991b1b; }
+  .b-free { background:#dcfce7; color:#166534; } .b-busy { background:#dbeafe; color:#1e40af; } .b-clean { background:#fef9c3; color:#854d0e; } .b-repair { background:#fee2e2; color:#991b1b; } .b-res { background:#ede9fe; color:#5b21b6; }
+  .stats { display:flex; gap:14px; margin-bottom:16px; }
+  .stat { flex:1; background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 16px; }
+  .stat b { display:block; font-size:22px; color:#1e3a8a; } .stat span { color:var(--muted); font-size:12px; }
+  .view { display:none; } .view.active { display:block; }
+  .note { color:var(--muted); font-size:12px; margin-top:8px; }
+  .actions button { margin-right:4px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Космос · Админ</div>
+  <nav>
+    <a data-v="bookings" class="active">Бронирования</a>
+    <a data-v="rooms">Номерной фонд</a>
+    <a data-v="users">Пользователи</a>
+  </nav>
+  <div class="user">admin@kosmos.ru · <a style="color:#2563eb">Выйти</a></div>
+</header>
+<main>
+  <!-- Управление бронированиями -->
+  <section class="view active" id="bookings">
+    <h1>Управление бронированиями</h1>
+    <div class="stats">
+      <div class="stat"><b id="s-all"></b><span>всего броней</span></div>
+      <div class="stat"><b id="s-wait"></b><span>ожидают подтверждения</span></div>
+      <div class="stat"><b id="s-in"></b><span>гостей проживает</span></div>
+      <div class="stat"><b id="s-sum"></b><span>выручка по подтверждённым, руб.</span></div>
+    </div>
+    <div class="card">
+      <div class="row" style="margin-bottom:12px">
+        <div><label>Статус</label><select id="f-status"><option>Все</option><option>Ожидает</option><option>Подтверждена</option><option>Заселён</option><option>Выселен</option><option>Отменена</option></select></div>
+        <div><label>Поиск по гостю</label><input id="f-guest" placeholder="Фамилия"></div>
+      </div>
+      <table><thead><tr><th>№</th><th>Гость</th><th>Номер</th><th>Заезд</th><th>Выезд</th><th>Сумма, руб.</th><th>Статус</th><th>Действия</th></tr></thead><tbody id="t-book"></tbody></table>
+    </div>
+  </section>
+
+  <!-- Номерной фонд -->
+  <section class="view" id="rooms">
+    <h1>Номерной фонд</h1>
+    <div class="card">
+      <div class="row">
+        <div><label>Номер</label><input id="r-num" value="304" style="min-width:80px;width:90px"></div>
+        <div><label>Категория</label><select id="r-cat"><option>Стандарт</option><option>Комфорт</option><option>Семейный</option><option>Полулюкс</option><option selected>Люкс</option></select></div>
+        <div><label>Мест</label><input id="r-cap" value="2" style="min-width:60px;width:70px"></div>
+        <div><label>Цена за ночь, руб.</label><input id="r-price" value="9800" style="width:130px"></div>
+        <button id="r-add">Добавить номер</button>
+      </div>
+    </div>
+    <div class="card">
+      <table><thead><tr><th>Номер</th><th>Категория</th><th>Мест</th><th>Цена, руб.</th><th>Статус</th><th>Изменить статус</th><th></th></tr></thead><tbody id="t-rooms"></tbody></table>
+      <div class="note">Изменения сохраняются в базе данных (таблица rooms) сразу после выбора статуса.</div>
+    </div>
+  </section>
+
+  <!-- Пользователи -->
+  <section class="view" id="users">
+    <h1>Пользователи и роли</h1>
+    <div class="card">
+      <div class="row">
+        <div><label>ФИО</label><input id="u-name" value="Соколова Елена Викторовна" style="width:230px"></div>
+        <div><label>Email</label><input id="u-mail" value="sokolova@kosmos.ru" style="width:190px"></div>
+        <div><label>Роль</label><select id="u-role"><option>Гость</option><option selected>Администратор</option><option>Менеджер</option><option>Горничная</option></select></div>
+        <button id="u-add">Добавить пользователя</button>
+      </div>
+    </div>
+    <div class="card">
+      <table><thead><tr><th>ID</th><th>ФИО</th><th>Email</th><th>Роль</th><th>Доступ к разделам</th><th></th></tr></thead><tbody id="t-users"></tbody></table>
+    </div>
+  </section>
+</main>
+<script>
+// Прототип хранит данные в localStorage (имитация таблиц БД users, rooms, bookings)
+const DB = {
+  load(k, def) { try { return JSON.parse(localStorage.getItem("kosmos_" + k)) || def; } catch (e) { return def; } },
+  save(k, v) { try { localStorage.setItem("kosmos_" + k, JSON.stringify(v)); } catch (e) {} }
+};
+let bookings = DB.load("bookings", [
+  {id:1, guest:"Иванов Иван Иванович", room:202, from:"10.10.2026", to:"13.10.2026", sum:20100, st:"Заселён"},
+  {id:2, guest:"Иванов Иван Иванович", room:201, from:"21.10.2026", to:"23.10.2026", sum:11200, st:"Подтверждена"},
+  {id:3, guest:"Петрова Анна Сергеевна", room:301, from:"14.10.2026", to:"18.10.2026", sum:38100, st:"Ожидает"},
+  {id:4, guest:"Смирнов Олег Петрович", room:102, from:"16.10.2026", to:"17.10.2026", sum:5700, st:"Ожидает"},
+  {id:5, guest:"Петрова Анна Сергеевна", room:101, from:"01.10.2026", to:"03.10.2026", sum:6400, st:"Выселен"},
+  {id:6, guest:"Кузнецов Дмитрий Андреевич", room:203, from:"18.10.2026", to:"20.10.2026", sum:14400, st:"Отменена"}]);
+let rooms = DB.load("rooms", [
+  {n:101,c:"Стандарт",cap:1,p:3200,s:"Свободен"},{n:102,c:"Стандарт",cap:2,p:4200,s:"Забронирован"},
+  {n:103,c:"Стандарт",cap:2,p:4200,s:"На уборке"},{n:201,c:"Комфорт",cap:2,p:5600,s:"Забронирован"},
+  {n:202,c:"Комфорт",cap:3,p:6100,s:"Занят"},{n:203,c:"Семейный",cap:4,p:7200,s:"Свободен"},
+  {n:301,c:"Полулюкс",cap:2,p:8300,s:"Забронирован"},{n:302,c:"Люкс",cap:2,p:9800,s:"В ремонте"}]);
+let users = DB.load("users", [
+  {id:1,name:"Администратор",mail:"admin@kosmos.ru",role:"Администратор"},
+  {id:2,name:"Иванов Иван Иванович",mail:"guest@mail.ru",role:"Гость"},
+  {id:3,name:"Петрова Анна Сергеевна",mail:"petrova@mail.ru",role:"Гость"},
+  {id:4,name:"Орлова Ирина Павловна",mail:"orlova@kosmos.ru",role:"Менеджер"},
+  {id:5,name:"Захарова Нина Юрьевна",mail:"zaharova@kosmos.ru",role:"Горничная"}]);
+const ACCESS = {"Гость":"поиск, бронирование, мои брони","Администратор":"все разделы","Менеджер":"брони, номерной фонд, отчёты","Горничная":"статусы уборки номеров"};
+const BCLS = {"Ожидает":"b-wait","Подтверждена":"b-ok","Заселён":"b-in","Выселен":"b-out","Отменена":"b-cancel"};
+const RCLS = {"Свободен":"b-free","Забронирован":"b-res","Занят":"b-busy","На уборке":"b-clean","В ремонте":"b-repair"};
+
+function renderBookings() {
+  const fs = document.getElementById("f-status").value, fg = document.getElementById("f-guest").value.toLowerCase();
+  const list = bookings.filter(b => (fs === "Все" || b.st === fs) && b.guest.toLowerCase().includes(fg));
+  document.getElementById("t-book").innerHTML = list.map(b => {
+    let act = "";
+    if (b.st === "Ожидает") act = `<button class="sm" onclick="setSt(${b.id},'Подтверждена')">Подтвердить</button><button class="sm red" onclick="setSt(${b.id},'Отменена')">Отменить</button>`;
+    else if (b.st === "Подтверждена") act = `<button class="sm" onclick="setSt(${b.id},'Заселён')">Заселить</button><button class="sm red" onclick="setSt(${b.id},'Отменена')">Отменить</button>`;
+    else if (b.st === "Заселён") act = `<button class="sm sec" onclick="setSt(${b.id},'Выселен')">Выселить</button>`;
+    return `<tr><td>${b.id}</td><td>${b.guest}</td><td>${b.room}</td><td>${b.from}</td><td>${b.to}</td><td>${b.sum.toLocaleString("ru")}</td><td><span class="badge ${BCLS[b.st]}">${b.st}</span></td><td class="actions">${act}</td></tr>`;
+  }).join("");
+  document.getElementById("s-all").textContent = bookings.length;
+  document.getElementById("s-wait").textContent = bookings.filter(b => b.st === "Ожидает").length;
+  document.getElementById("s-in").textContent = bookings.filter(b => b.st === "Заселён").length;
+  document.getElementById("s-sum").textContent = bookings.filter(b => ["Подтверждена","Заселён","Выселен"].includes(b.st)).reduce((s,b) => s + b.sum, 0).toLocaleString("ru");
+}
+function setSt(id, st) {
+  const b = bookings.find(x => x.id === id); b.st = st;
+  const r = rooms.find(x => x.n === b.room);
+  if (r && st === "Заселён") r.s = "Занят";
+  if (r && st === "Выселен") r.s = "На уборке";
+  DB.save("bookings", bookings); DB.save("rooms", rooms); renderAll();
+}
+function renderRooms() {
+  document.getElementById("t-rooms").innerHTML = rooms.map((r, i) =>
+    `<tr><td><b>${r.n}</b></td><td>${r.c}</td><td>${r.cap}</td><td>${r.p.toLocaleString("ru")}</td><td><span class="badge ${RCLS[r.s]}">${r.s}</span></td>
+     <td><select onchange="rooms[${i}].s=this.value;DB.save('rooms',rooms);renderRooms()">${Object.keys(RCLS).map(s => `<option ${s===r.s?"selected":""}>${s}</option>`).join("")}</select></td>
+     <td><button class="sm red" onclick="if(confirm('Удалить номер?')){rooms.splice(${i},1);DB.save('rooms',rooms);renderRooms()}">Удалить</button></td></tr>`).join("");
+}
+function renderUsers() {
+  document.getElementById("t-users").innerHTML = users.map((u, i) =>
+    `<tr><td>${u.id}</td><td>${u.name}</td><td>${u.mail}</td><td>${u.role}</td><td style="color:#6b7280">${ACCESS[u.role]}</td>
+     <td>${u.id === 1 ? "" : `<button class="sm red" onclick="users.splice(${i},1);DB.save('users',users);renderUsers()">Удалить</button>`}</td></tr>`).join("");
+}
+function renderAll() { renderBookings(); renderRooms(); renderUsers(); }
+document.getElementById("r-add").onclick = () => {
+  const n = +document.getElementById("r-num").value;
+  if (!n || rooms.some(r => r.n === n)) { alert("Номер уже существует или указан неверно"); return; }
+  rooms.push({n, c:document.getElementById("r-cat").value, cap:+document.getElementById("r-cap").value, p:+document.getElementById("r-price").value, s:"Свободен"});
+  rooms.sort((a,b) => a.n - b.n); DB.save("rooms", rooms); renderRooms();
+};
+document.getElementById("u-add").onclick = () => {
+  const mail = document.getElementById("u-mail").value.trim();
+  if (!mail.includes("@") || users.some(u => u.mail === mail)) { alert("Email указан неверно или уже занят"); return; }
+  users.push({id: Math.max(...users.map(u => u.id)) + 1, name: document.getElementById("u-name").value, mail, role: document.getElementById("u-role").value});
+  DB.save("users", users); renderUsers();
+};
+document.getElementById("f-status").onchange = renderBookings;
+document.getElementById("f-guest").oninput = renderBookings;
+document.querySelectorAll("nav a").forEach(a => a.onclick = () => {
+  document.querySelectorAll("nav a").forEach(x => x.classList.toggle("active", x === a));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === a.dataset.v));
+});
+renderAll();
+</script>
+</body>
+</html>
